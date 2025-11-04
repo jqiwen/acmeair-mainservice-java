@@ -1,0 +1,27 @@
+name: Notify parent on YAML change
+
+on:
+  push:
+    branches: [ main ]            
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send repository_dispatch to parent
+        env:
+          PARENT_REPO: jqiwen/acmeair          
+          EVENT_TYPE: submodule-yaml-changed
+          PAT: ${{ secrets.PARENT_REPO_TOKEN }}
+        run: |
+          curl -s -X POST "https://api.github.com/repos/$PARENT_REPO/dispatches" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $PAT" \
+            -d "{\"event_type\":\"$EVENT_TYPE\",\"client_payload\":{
+                  \"submodule\":\"${GITHUB_REPOSITORY}\",
+                  \"ref\":\"${GITHUB_REF}\",
+                  \"sha\":\"${GITHUB_SHA}\"
+                }}"
